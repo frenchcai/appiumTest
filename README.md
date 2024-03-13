@@ -1,0 +1,117 @@
+# 基于appium 自动化测试驱动平台安装
+
+## 安装 java jdk
+
+jdk 下载地址
+ 
+[jdk](https://www.oracle.com/java/technologies/javase-downloads.html)
+
+下载安装完成后，本地环境变量，增加JAVA_HOME，对应是jdk安装路径
+
+## 安装Android sdk
+
+[下载地址](http://www.android-studio.org)
+下载完成后，设置ANDROID_HOME 为sdk 安装路径
+
+还需要将 安装路径下的 platform-tools目录 进入path 中
+
+## 安装模拟器
+
+推荐安装夜神模拟器或者雷电模拟器
+
+## 安装appinum
+安装appium ，可以使用Python或者 node 安装，下面是通过node 来按照，具体文档地址如下
+[appiunm 服务端安装路径](https://appium.io/docs/en/latest/quickstart/install/)
+
+安装完成后，可以在CMD 中输入 appium ，如果输出 welcome 说明安装成功
+
+检查后，需要安装对应的驱动，输入appium driver list 查看未安装驱动，
+
+一般只需要安装 uiautomator2，安装命令输入，appium driver install uiautomator2
+
+第一次可能会安装失败，会提示chromium下载有问题，这个时候，可以通过设置
+APPIUM_SKIP_CHROMEDRIVER_INSTALL 为true 便可以正确安装
+
+安装完成后，还需要安装 一个用来查找页面的工具，
+[地址](https://github.com/appium/appium-inspector/releases)
+Appium-Inspector-windows-2024.3.1-ia32
+
+## 编写脚本，驱动appium 操作app
+进过上述步骤，我们都可以将所需要的引用准备好，下面启动模拟器
+
+然后启动 appium 输入 appium 即可启动
+
+然后使用adb.exe connect 127.0.0.1:62001 链接模拟器
+
+可以使用adb devices 查看已经链接的设置
+
+appium 启动后，启动Inspector，开始创建于模拟器的会话，用来操作app
+
+需要填以下参数，
+
+{
+  "appium:deviceVersion": "7.1.2",
+  "appium:deviceName": "star2qltechn",
+  "appium:appPackage": "com.ss.android.article.lite",
+  "appium:appActivity": ".activity.SplashActivity",
+  "appium:automationName": "UiAutomator2",
+  "platformName": "Android"
+}
+
+其中deviceVersion可以模拟器的设置中参看，deviceName，可以使用 adb device -l 查看 device: 后面就是了
+
+appPackage、appActivity 可以使用 adb shell dumpsys activity recents   来查看
+
+需要的是其中字段cmp的值：tv.danmaku.bili/.ui.splash.SplashActivity，/前的tv.danmaku.bili就是appPackge的值，/后的.ui.splash.SplashActivity就是appActivity的值。
+
+建立完成后，可以点击startSessoon ，如果成功，可以看到一个模拟器内部的截图，通过这个图片，定位自己需要找的元素
+
+## 编写脚本
+下面的脚本用来参考，如何驱动app，需要先下载webdriverio依赖
+
+```javascript
+/*
+ * @Description:
+ * @Author: caifw
+ * @Date: 2024-03-12 09:41:27
+ * @LastEditTime: 2024-03-13 08:53:40
+ */
+const { remote } = require("webdriverio");
+
+const capabilities = {
+  platformName: 'Android',
+  'appium:automationName': 'UiAutomator2',
+  'appium:deviceName': 'Android',
+  'appium:appPackage': 'com.tencent.android.qqdownloader',
+  'appium:appActivity': 'com.tencent.pangu.link.SplashActivity',
+  "appium:noReset": true, // 不复位数据
+  "appium:unicodeKeyboard": false // 隐藏键盘
+};
+
+
+
+
+const wdOpts = {
+  hostname: "localhost",
+  port: parseInt(process.env.APPIUM_PORT, 10) || 4723,
+  logLevel: "info",
+  capabilities,
+};
+
+async function runTest() {
+  const driver = await remote(wdOpts);
+  try {
+    const batteryItem = await driver.$('//android.widget.Button[@resource-id="com.tencent.android.qqdownloader:id/ri"]');
+    await batteryItem.click();
+    
+  } finally {
+    await driver.pause(1000);
+    await driver.deleteSession();
+  }
+}
+
+runTest().catch(console.error);
+
+```
+参考博客地址
+[地址](https://blog.csdn.net/xp178171640/article/details/115718192)
